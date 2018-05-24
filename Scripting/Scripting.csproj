@@ -42,10 +42,12 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ApiService.cs" />
+    <Compile Include="Animal.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="text.swift" />
     <None Include="packages.config" />
+    <None Include="todo.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
