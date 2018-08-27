@@ -6,13 +6,10 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.IO;
 using System.Collections.Generic;
-using System.Net;
 using System.Xml;
 
 namespace MagiqApp.Services {
@@ -29,84 +26,15 @@ namespace MagiqApp.Services {
 		private const string EndingSoapXml = "</soap12:Body></soap12:Envelope>";
 
 		//
-		public static string _url = "https://cust0.magiqdev.cloud/Documents/srv.asmx";
-		private const string documentPath = "\\Public Access Folders\\Uploaded Photos\\";
+		public static string _url = "http://192.168.50.133/srv.asmx";
+		public const string documentPath = "\\Corporate\\Invoices Test\\image004.png";
 
 		#endregion
 
 		//
 		static ApiService() {
 			client.Timeout = TimeSpan.FromSeconds(120); //default timeout
-
 		}
-
-		#region Authentication
-		//Checks if given URL is reachable:
-		public static async Task<Status> ValidateUrlAsync(Uri url) {
-			return await HeadCallAsync(url);
-		}
-
-		//Checks with the server that the currently stored token is still valid:
-		//public static async Task<bool> CheckTokenValidAsync(string token) {
-		//	//implement
-		//	await Task.Delay(1).ContinueWith(t => Debug.WriteLine("API: TOKEN no longer valid. (to implement API)"));
-		//	return false;
-		//}
-
-		//
-		//public static async Task<Tuple<Status, List<CustListResponse>>> GetCustomersList(string token) {
-
-		//	client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-		//	var result = await GetStringCallAsync(CustUrl);
-
-		//	if (result.Item1 == Status.Success) {
-		//		var custs = JsonConvert.DeserializeObject<List<CustListResponse>>(result.Item2);
-
-		//		return new Tuple<Status, List<CustListResponse>>(Status.Success, custs);
-		//	}
-
-		//	return new Tuple<Status, List<CustListResponse>>(result.Item1, null);
-
-		//}
-
-		//Authenticates using email, password API Call to MAGIQ Cloud Auth:
-		//public static async Task<Tuple<Status, string>> AuthenticateAsync(string email, string password) {
-
-		//	var json = JsonConvert.SerializeObject(new {
-		//		Email = email,
-		//		Password = password
-		//	});
-
-		//	var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-		//	var result = await PostCallAsync(AuthUrl, content);
-
-		//	if (result.Item1 == Status.Success) {
-		//		var token = JsonConvert.DeserializeObject<AuthLoginResponse>(result.Item2).token;
-		//		return new Tuple<Status, string>(Status.Success, token);
-		//	}
-
-		//	return result;
-		//}
-
-		//Logouts current user from the server:
-		public static async Task<Status> LogoutAsync() {
-			await Task.Delay(1).ContinueWith(t => Debug.WriteLine("API: Logged out. (to implement API)"));
-			return Status.Failure;
-		}
-		#endregion
-
-		#region Documents
-		//Downloads a file from given url location:
-		public static async Task<Tuple<Status, Stream>> DownloadFileAsync(Uri url) {
-			//Increase timout time for possible larger file download times:
-			client.Timeout = TimeSpan.FromMinutes(3);
-			var file = await GetCallAsync(url);
-			client.Timeout = TimeSpan.FromSeconds(12);
-			return file;
-		}
-		#endregion
 
 		#region Soap
 		//Attempts to authenticate a user, taking in username and password:
@@ -214,6 +142,71 @@ namespace MagiqApp.Services {
 			}
 			return null;
 		}
+
+
+
+		public static async Task<string> SoapSetFav(string ticket, string path) {
+
+			var doc = new XmlDocument();
+			client.Timeout = TimeSpan.FromSeconds(120);
+			//SOAP Body Request:
+			doc.LoadXml(
+				BeginningSoapXml +
+				"<AddToFavorites xmlns = \"http://tempuri.org/\">" +
+				"<authenticationTicket>" + ticket + "</authenticationTicket>" +
+				"<itemPath>" + path + "</itemPath>" +
+				"</AddToFavorites>" +
+				EndingSoapXml
+			);
+
+			//Does the call:
+			var content = new StringContent(doc.OuterXml, Encoding.UTF8, "application/soap+xml");
+			var theUrl = new Uri(_url);
+			var result = await PostCallAsync(theUrl, content);
+
+			if (result.Item1 == Status.Success) {
+				//Converts web response to XML Node:
+				doc.LoadXml(result.Item2);
+				return doc.DocumentElement.InnerText;
+			}
+			return "Favourites failed";
+
+		}
+
+
+
+
+		public static async Task<string> SoapCompleteTask(string ticket, int taskId, string comments) {
+
+			var doc = new XmlDocument();
+			client.Timeout = TimeSpan.FromSeconds(120);
+			//SOAP Body Request:
+			doc.LoadXml(
+				BeginningSoapXml +
+				"<CompleteTask xmlns = \"http://tempuri.org/\">" +
+				"<AuthenticationTicket>" + ticket + "</AuthenticationTicket>" +
+				"<taskId>" + taskId + "</taskId>" +
+				"<comments>" + comments + "</comments>" +
+				"</CompleteTask>" +
+				EndingSoapXml
+			);
+
+			//Does the call:
+			var content = new StringContent(doc.OuterXml, Encoding.UTF8, "application/soap+xml");
+			var theUrl = new Uri(_url);
+			var result = await PostCallAsync(theUrl, content);
+
+			if (result.Item1 == Status.Success) {
+				//Converts web response to XML Node:
+				doc.LoadXml(result.Item2);
+				return doc.DocumentElement.InnerText;
+			}
+			return "Task completion failed";
+
+		}
+
+
+
 		#endregion
 
 		#region HttpRequests

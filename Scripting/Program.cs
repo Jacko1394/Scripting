@@ -13,12 +13,11 @@ namespace Scripting {
 
 		public static void Main() {
 
-			var t = ApiService.SoapAuthenticateUser("sysadmin", "sysadmin");
+			var t = ApiService.SoapAuthenticateUser("sysadmin", "info2929");
 			t.Wait();
-
-
-			Console.Write("Hello world.\n");
-
+			var t2 = ApiService.SoapCompleteTask(t.Result.Ticket, 1013, "wowzers");
+			t2.Wait();
+			Console.WriteLine(t2.Result);
 		}
 
 		public static void ChangeValue(Animal animal) {
